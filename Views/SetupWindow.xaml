@@ -1,0 +1,387 @@
+<Window x:Class="CrosshairOverlay.Views.SetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Crosshair Overlay — Setup"
+        Height="720" Width="1080"
+        MinHeight="620" MinWidth="980"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E"
+        Foreground="#EEEEEE"
+        FontFamily="Segoe UI" FontSize="13">
+    <Window.Resources>
+        <Style TargetType="Label">
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+            <Setter Property="Padding" Value="0,4,8,4"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="Padding" Value="4,2"/>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+        </Style>
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+        </Style>
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+        </Style>
+        <Style TargetType="GroupBox">
+            <Setter Property="Foreground" Value="#BBBBBB"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Padding" Value="6"/>
+        </Style>
+
+        <!-- Small icon-button style for per-layer actions -->
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="MinWidth" Value="22"/>
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="2,0,0,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3F3F46"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Data template for a layer row -->
+        <DataTemplate x:Key="LayerItemTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                    <Run Text="{Binding Name}" FontWeight="SemiBold"/>
+                    <Run Text=" · "/>
+                    <Run Text="{Binding Type}" Foreground="#888888"/>
+                </TextBlock>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource IconButton}" Content="&#xE70E;" ToolTip="Move up"
+                            Tag="{Binding}" Click="LayerUp_Click"/>
+                    <Button Style="{StaticResource IconButton}" Content="&#xE70D;" ToolTip="Move down"
+                            Tag="{Binding}" Click="LayerDown_Click"/>
+                    <Button Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Delete"
+                            Tag="{Binding}" Click="LayerDelete_Click"/>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel LastChildFill="True">
+        <!-- Bottom action bar -->
+        <Border DockPanel.Dock="Bottom" Background="#252526" Padding="12,10" BorderBrush="#3F3F46" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Start Overlay" Click="Start_Click" Background="#0E639C" FontWeight="SemiBold"/>
+                <Button Content="Close App" Click="Close_Click"/>
+            </StackPanel>
+        </Border>
+
+        <Grid Margin="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="240"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Profiles column -->
+            <DockPanel Grid.Column="0" Margin="0,0,10,0">
+                <TextBlock DockPanel.Dock="Top" Text="Profiles" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,6,0,0">
+                    <Button Content="New" Click="NewProfile_Click" MinWidth="56"/>
+                    <Button Content="Duplicate" Click="DuplicateProfile_Click" MinWidth="68"/>
+                    <Button Content="Delete" Click="DeleteProfile_Click" MinWidth="56"/>
+                </StackPanel>
+                <ListBox x:Name="ProfileList" SelectionChanged="ProfileList_SelectionChanged" DisplayMemberPath="Name"/>
+            </DockPanel>
+
+            <!-- Layers column -->
+            <DockPanel Grid.Column="1" Margin="0,0,10,0" x:Name="LayersPanel">
+                <TextBlock DockPanel.Dock="Top" Text="Layers" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <Border DockPanel.Dock="Bottom" Margin="0,6,0,0" BorderBrush="#3F3F46" BorderThickness="1" Padding="6" Background="#252526">
+                    <StackPanel>
+                        <TextBlock Text="Add layer" Foreground="#888888" Margin="0,0,0,4"/>
+                        <WrapPanel>
+                            <Button Content="Cross" Click="AddLayerCross_Click" MinWidth="56"/>
+                            <Button Content="Dot" Click="AddLayerDot_Click" MinWidth="46"/>
+                            <Button Content="Circle" Click="AddLayerCircle_Click" MinWidth="58"/>
+                            <Button Content="T" Click="AddLayerT_Click" MinWidth="36"/>
+                            <Button Content="X" Click="AddLayerX_Click" MinWidth="36"/>
+                            <Button Content="Rect" Click="AddLayerRect_Click" MinWidth="46"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+                <ListBox x:Name="LayerList"
+                         SelectionChanged="LayerList_SelectionChanged"
+                         ItemTemplate="{StaticResource LayerItemTemplate}"
+                         HorizontalContentAlignment="Stretch"/>
+            </DockPanel>
+
+            <!-- Editor + Preview column -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="220"/>
+                </Grid.RowDefinitions>
+
+                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="EditorPanel" Margin="0,0,0,8">
+                        <GroupBox Header="Profile">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Name" Grid.Column="0"/>
+                                    <TextBox x:Name="NameBox" Grid.Column="1" TextChanged="NameBox_TextChanged"/>
+                                </Grid>
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Global Opacity" Grid.Column="0"/>
+                                    <TextBox x:Name="GlobalOpacityBox" Grid.Column="1" TextChanged="Editor_Changed"/>
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Mode">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="ModeVectorRadio" Content="Vector (layered)" GroupName="Mode" Checked="Mode_Checked"/>
+                                <RadioButton x:Name="ModeImageRadio" Content="PNG Image" GroupName="Mode" Checked="Mode_Checked"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Vector layer editor -->
+                        <GroupBox x:Name="LayerEditor" Header="Layer">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Name" Grid.Column="0"/>
+                                    <TextBox x:Name="LayerNameBox" Grid.Column="1" TextChanged="LayerName_TextChanged"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Type" Grid.Column="0"/>
+                                    <ComboBox x:Name="TypeCombo" Grid.Column="1" SelectionChanged="LayerEditor_Changed"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Primary Color" Grid.Column="0"/>
+                                    <TextBox x:Name="PrimaryColorBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                    <Button Content="Pick" Grid.Column="2" Click="PickPrimary_Click" MinWidth="50" Margin="8,0,0,0"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Outline Color" Grid.Column="0"/>
+                                    <TextBox x:Name="OutlineColorBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                    <Button Content="Pick" Grid.Column="2" Click="PickOutline_Click" MinWidth="50" Margin="8,0,0,0"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Outline Thickness" Grid.Column="0"/>
+                                    <TextBox x:Name="OutlineThicknessBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                </Grid>
+
+                                <Grid x:Name="LineThicknessRow" Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Line Thickness" Grid.Column="0"/>
+                                    <TextBox x:Name="LineThicknessBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                </Grid>
+                                <Grid x:Name="LineLengthRow" Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Line Length" Grid.Column="0"/>
+                                    <TextBox x:Name="LineLengthBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                </Grid>
+                                <Grid x:Name="CenterGapRow" Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Center Gap" Grid.Column="0"/>
+                                    <TextBox x:Name="CenterGapBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                </Grid>
+                                <Grid x:Name="DotDiameterRow" Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Dot Diameter" Grid.Column="0"/>
+                                    <TextBox x:Name="DotDiameterBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                </Grid>
+                                <Grid x:Name="CircleDiameterRow" Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Circle Diameter" Grid.Column="0"/>
+                                    <TextBox x:Name="CircleDiameterBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                </Grid>
+                                <Grid x:Name="RectSizeRow" Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Rect Width" Grid.Column="0"/>
+                                    <TextBox x:Name="RectWidthBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                    <Label Content="Height" Grid.Column="2" Margin="8,0,0,0"/>
+                                    <TextBox x:Name="RectHeightBox" Grid.Column="3" TextChanged="LayerEditor_Changed"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Layer Offset X" Grid.Column="0"/>
+                                    <TextBox x:Name="LayerOffsetXBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                    <Label Content="Offset Y" Grid.Column="2" Margin="8,0,0,0"/>
+                                    <TextBox x:Name="LayerOffsetYBox" Grid.Column="3" TextChanged="LayerEditor_Changed"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Layer Opacity" Grid.Column="0"/>
+                                    <TextBox x:Name="LayerOpacityBox" Grid.Column="1" TextChanged="LayerEditor_Changed"/>
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Image mode editor -->
+                        <GroupBox x:Name="ImageEditor" Header="Image">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="PNG Path" Grid.Column="0"/>
+                                    <TextBox x:Name="ImagePathBox" Grid.Column="1" TextChanged="Editor_Changed"/>
+                                    <Button Content="Browse" Grid.Column="2" Click="BrowseImage_Click" MinWidth="60" Margin="8,0,0,0"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Image Width" Grid.Column="0"/>
+                                    <TextBox x:Name="ImageWidthBox" Grid.Column="1" TextChanged="Editor_Changed"/>
+                                    <Label Content="Height" Grid.Column="2" Margin="8,0,0,0"/>
+                                    <TextBox x:Name="ImageHeightBox" Grid.Column="3" TextChanged="Editor_Changed"/>
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Centering &amp; Offset (profile-wide)">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Content="Offset X (px)" Grid.Column="0"/>
+                                <TextBox x:Name="OffsetXBox" Grid.Column="1" TextChanged="Editor_Changed"/>
+                                <Label Content="Offset Y (px)" Grid.Column="2" Margin="8,0,0,0"/>
+                                <TextBox x:Name="OffsetYBox" Grid.Column="3" TextChanged="Editor_Changed"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="Reference Resolution">
+                            <StackPanel>
+                                <CheckBox x:Name="AutoResCheck" Content="Use current Windows primary resolution" Checked="AutoRes_Changed" Unchecked="AutoRes_Changed" Margin="0,0,0,6"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Content="Width" Grid.Column="0"/>
+                                    <TextBox x:Name="CustomWidthBox" Grid.Column="1" TextChanged="Editor_Changed"/>
+                                    <Label Content="Height" Grid.Column="2" Margin="8,0,0,0"/>
+                                    <TextBox x:Name="CustomHeightBox" Grid.Column="3" TextChanged="Editor_Changed"/>
+                                </Grid>
+                                <TextBlock x:Name="DetectedResText" Foreground="#888888" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Preview -->
+                <Border Grid.Row="1" Background="#0A0A0A" BorderBrush="#3F3F46" BorderThickness="1" CornerRadius="2" Margin="0,4,0,0">
+                    <Grid>
+                        <TextBlock Text="Preview" Foreground="#666666" Margin="8,4" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                        <Canvas x:Name="PreviewCanvas" Background="Transparent" SizeChanged="PreviewCanvas_SizeChanged" ClipToBounds="True"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>
