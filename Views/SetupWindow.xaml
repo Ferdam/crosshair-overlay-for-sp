@@ -100,10 +100,16 @@
     <DockPanel LastChildFill="True">
         <!-- Bottom action bar -->
         <Border DockPanel.Dock="Bottom" Background="#252526" Padding="12,10" BorderBrush="#3F3F46" BorderThickness="0,1,0,0">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Start Overlay" Click="Start_Click" Background="#0E639C" FontWeight="SemiBold"/>
-                <Button Content="Close App" Click="Close_Click"/>
-            </StackPanel>
+            <Grid>
+                <CheckBox x:Name="HotkeyEnabledCheck"
+                          HorizontalAlignment="Left" VerticalAlignment="Center"
+                          Content="Enable toggle hotkey (Right Ctrl + Numpad 4, NumLock on)"
+                          Checked="HotkeyEnabled_Changed" Unchecked="HotkeyEnabled_Changed"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Start Overlay" Click="Start_Click" Background="#0E639C" FontWeight="SemiBold"/>
+                    <Button Content="Close App" Click="Close_Click"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <Grid Margin="12">

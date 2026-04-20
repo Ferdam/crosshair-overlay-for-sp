@@ -26,6 +26,10 @@ public partial class SetupWindow : Window
 
         DetectedResText.Text = $"Detected: {(int)SystemParameters.PrimaryScreenWidth} × {(int)SystemParameters.PrimaryScreenHeight}";
 
+        _suppressSync = true;
+        HotkeyEnabledCheck.IsChecked = App.Profiles.HotkeyEnabled;
+        _suppressSync = false;
+
         var active = App.Profiles.Active ?? App.Profiles.Profiles.FirstOrDefault();
         if (active != null)
         {
@@ -225,6 +229,15 @@ public partial class SetupWindow : Window
         WriteBackProfile();
         UpdateModeVisibility();
         RefreshPreview();
+        App.Profiles.Save();
+    }
+
+    private void HotkeyEnabled_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_suppressSync) return;
+        bool enabled = HotkeyEnabledCheck.IsChecked == true;
+        App.Profiles.HotkeyEnabled = enabled;
+        App.Hotkeys.Enabled = enabled;
         App.Profiles.Save();
     }
 

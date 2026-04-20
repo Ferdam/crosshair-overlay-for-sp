@@ -25,6 +25,7 @@ public class ProfileService
 
     public ObservableCollection<Profile> Profiles { get; } = new();
     public Profile? Active { get; set; }
+    public bool HotkeyEnabled { get; set; } = true;
 
     public void Load()
     {
@@ -39,6 +40,7 @@ public class ProfileService
                 {
                     foreach (var p in store.Profiles) Profiles.Add(p);
                     Active = Profiles.FirstOrDefault(p => p.Name == store.ActiveProfileName) ?? Profiles.FirstOrDefault();
+                    HotkeyEnabled = store.HotkeyEnabled;
                 }
             }
         }
@@ -74,6 +76,7 @@ public class ProfileService
         {
             Profiles = Profiles.ToList(),
             ActiveProfileName = Active?.Name,
+            HotkeyEnabled = HotkeyEnabled,
         };
         var json = JsonSerializer.Serialize(store, JsonOptions);
         File.WriteAllText(ConfigPath, json);

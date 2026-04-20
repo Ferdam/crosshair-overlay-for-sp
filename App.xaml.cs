@@ -14,6 +14,7 @@ public partial class App : Application
 
     public static ProfileService Profiles { get; private set; } = null!;
     public static OverlayController Overlay { get; private set; } = null!;
+    public static HotkeyService Hotkeys { get; private set; } = null!;
     public static SetupWindow? SetupWindow { get; set; }
 
     protected override void OnStartup(StartupEventArgs e)
@@ -37,8 +38,9 @@ public partial class App : Application
         _tray = new TrayIconService();
         _tray.Initialize();
 
-        _hotkeys = new HotkeyService();
+        _hotkeys = new HotkeyService { Enabled = Profiles.HotkeyEnabled };
         _hotkeys.Initialize();
+        Hotkeys = _hotkeys;
 
         ShowSetup();
     }

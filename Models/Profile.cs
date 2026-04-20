@@ -46,4 +46,5 @@ public class ProfileStore
 {
     public List<Profile> Profiles { get; set; } = new();
     public string? ActiveProfileName { get; set; }
+    public bool HotkeyEnabled { get; set; } = true;
 }
