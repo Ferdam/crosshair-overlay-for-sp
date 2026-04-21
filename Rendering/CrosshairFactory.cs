@@ -6,6 +6,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using CrosshairOverlay.Models;
+using Path = System.Windows.Shapes.Path;
+using Point = System.Windows.Point;
 
 namespace CrosshairOverlay.Rendering;
 
@@ -57,47 +59,23 @@ public static class CrosshairFactory
         canvas.Children.Add(layerCanvas);
     }
 
+    // Filled primitives: one shape, Fill=primary + Stroke=outline. Transparent fill → true hollow.
+
     private static void AddDot(Canvas canvas, double cx, double cy, VectorLayer l, Brush primary, Brush outline)
     {
         var d = l.DotDiameter;
         var ot = l.OutlineThickness;
-        if (ot > 0)
+        var dot = new Ellipse
         {
-            var outer = new Ellipse { Width = d + ot * 2, Height = d + ot * 2, Fill = outline };
-            Canvas.SetLeft(outer, cx - (d / 2 + ot));
-            Canvas.SetTop(outer, cy - (d / 2 + ot));
-            canvas.Children.Add(outer);
-        }
-        var inner = new Ellipse { Width = d, Height = d, Fill = primary };
-        Canvas.SetLeft(inner, cx - d / 2);
-        Canvas.SetTop(inner, cy - d / 2);
-        canvas.Children.Add(inner);
-    }
-
-    private static void AddCircle(Canvas canvas, double cx, double cy, VectorLayer l, Brush primary, Brush outline)
-    {
-        var d = l.CircleDiameter;
-        var t = l.LineThickness;
-        var ot = l.OutlineThickness;
-        if (ot > 0)
-        {
-            var ring = new Ellipse
-            {
-                Width = d, Height = d,
-                Stroke = outline, StrokeThickness = t + ot * 2,
-            };
-            Canvas.SetLeft(ring, cx - d / 2);
-            Canvas.SetTop(ring, cy - d / 2);
-            canvas.Children.Add(ring);
-        }
-        var inner = new Ellipse
-        {
-            Width = d, Height = d,
-            Stroke = primary, StrokeThickness = t,
+            Width = d,
+            Height = d,
+            Fill = primary,
+            Stroke = ot > 0 ? outline : null,
+            StrokeThickness = ot,
         };
-        Canvas.SetLeft(inner, cx - d / 2);
-        Canvas.SetTop(inner, cy - d / 2);
-        canvas.Children.Add(inner);
+        Canvas.SetLeft(dot, cx - d / 2);
+        Canvas.SetTop(dot, cy - d / 2);
+        canvas.Children.Add(dot);
     }
 
     private static void AddRectangle(Canvas canvas, double cx, double cy, VectorLayer l, Brush primary, Brush outline)
@@ -105,28 +83,49 @@ public static class CrosshairFactory
         var w = l.RectWidth;
         var h = l.RectHeight;
         var ot = l.OutlineThickness;
-        if (ot > 0)
-        {
-            var outer = new System.Windows.Shapes.Rectangle
-            {
-                Width = w + ot * 2,
-                Height = h + ot * 2,
-                Fill = outline,
-            };
-            Canvas.SetLeft(outer, cx - (w / 2 + ot));
-            Canvas.SetTop(outer, cy - (h / 2 + ot));
-            canvas.Children.Add(outer);
-        }
-        var inner = new System.Windows.Shapes.Rectangle
+        var rect = new System.Windows.Shapes.Rectangle
         {
             Width = w,
             Height = h,
             Fill = primary,
+            Stroke = ot > 0 ? outline : null,
+            StrokeThickness = ot,
         };
-        Canvas.SetLeft(inner, cx - w / 2);
-        Canvas.SetTop(inner, cy - h / 2);
-        canvas.Children.Add(inner);
+        Canvas.SetLeft(rect, cx - w / 2);
+        Canvas.SetTop(rect, cy - h / 2);
+        canvas.Children.Add(rect);
     }
+
+    // Circle: a ring (donut) path. Fill fills the ring body; Stroke outlines *both* the inner
+    // and outer edges of the ring, so a transparent primary leaves two concentric outlines.
+    private static void AddCircle(Canvas canvas, double cx, double cy, VectorLayer l, Brush primary, Brush outline)
+    {
+        var d = l.CircleDiameter;
+        var t = l.LineThickness;
+        var ot = l.OutlineThickness;
+        var outerR = d / 2 + t / 2;
+        var innerR = Math.Max(0, d / 2 - t / 2);
+
+        var outerEllipse = new EllipseGeometry(new Point(cx, cy), outerR, outerR);
+        var innerEllipse = new EllipseGeometry(new Point(cx, cy), innerR, innerR);
+        Geometry ring = innerR > 0
+            ? new CombinedGeometry(GeometryCombineMode.Exclude, outerEllipse, innerEllipse)
+            : outerEllipse;
+        ring.Freeze();
+
+        var path = new Path
+        {
+            Data = ring,
+            Fill = primary,
+            Stroke = ot > 0 ? outline : null,
+            StrokeThickness = ot,
+            SnapsToDevicePixels = true,
+        };
+        canvas.Children.Add(path);
+    }
+
+    // Line-based primitives: each segment becomes a filled rectangle polygon (rotated as needed)
+    // so Fill+Stroke behave the same as for filled shapes — transparent fill → hollow stroke pair.
 
     private static void AddCross(Canvas canvas, double cx, double cy, VectorLayer l, Brush primary, Brush outline)
     {
@@ -142,8 +141,11 @@ public static class CrosshairFactory
     {
         var gap = l.CenterGap;
         var len = l.LineLength;
-        AddSegment(canvas, cx - len, cy, cx + len, cy, l, primary, outline);
-        AddSegment(canvas, cx, cy + gap, cx, cy + gap + len, l, primary, outline);
+        // T's natural bbox: x ∈ [cx-len, cx+len], y ∈ [cy, cy+gap+len] (bar + stem).
+        // Shift so bbox center sits exactly on (cx, cy).
+        double shiftY = -(gap + len) / 2;
+        AddSegment(canvas, cx - len, cy + shiftY, cx + len, cy + shiftY, l, primary, outline);
+        AddSegment(canvas, cx, cy + gap + shiftY, cx, cy + gap + len + shiftY, l, primary, outline);
     }
 
     private static void AddX(Canvas canvas, double cx, double cy, VectorLayer l, Brush primary, Brush outline)
@@ -159,30 +161,36 @@ public static class CrosshairFactory
         AddSegment(canvas, cx + gx, cy - gy, cx + gx + lx, cy - gy - ly, l, primary, outline);
     }
 
+    // Draws a thick segment as a polygon so Fill/Stroke behave identically to the filled shapes.
     private static void AddSegment(Canvas canvas, double x1, double y1, double x2, double y2,
         VectorLayer l, Brush primary, Brush outline)
     {
         var t = l.LineThickness;
         var ot = l.OutlineThickness;
-        if (ot > 0)
+        double dx = x2 - x1, dy = y2 - y1;
+        double len = Math.Sqrt(dx * dx + dy * dy);
+        if (len <= 0 || t <= 0) return;
+
+        // Perpendicular vector of length t/2
+        double px = -dy / len * (t / 2);
+        double py = dx / len * (t / 2);
+
+        var poly = new Polygon
         {
-            var outer = new Line
+            Points = new PointCollection
             {
-                X1 = x1, Y1 = y1, X2 = x2, Y2 = y2,
-                Stroke = outline, StrokeThickness = t + ot * 2,
-                StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat,
-                SnapsToDevicePixels = true,
-            };
-            canvas.Children.Add(outer);
-        }
-        var line = new Line
-        {
-            X1 = x1, Y1 = y1, X2 = x2, Y2 = y2,
-            Stroke = primary, StrokeThickness = t,
-            StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat,
+                new Point(x1 + px, y1 + py),
+                new Point(x2 + px, y2 + py),
+                new Point(x2 - px, y2 - py),
+                new Point(x1 - px, y1 - py),
+            },
+            Fill = primary,
+            Stroke = ot > 0 ? outline : null,
+            StrokeThickness = ot,
+            StrokeLineJoin = PenLineJoin.Miter,
             SnapsToDevicePixels = true,
         };
-        canvas.Children.Add(line);
+        canvas.Children.Add(poly);
     }
 
     private static void AddImage(Canvas canvas, double cx, double cy, CrosshairDef def)
