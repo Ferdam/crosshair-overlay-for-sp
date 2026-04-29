@@ -7,9 +7,9 @@ A lightweight Windows desktop overlay that renders a customizable crosshair on t
 - Import a custom **PNG image** as your crosshair
 - Build a crosshair from scratch using **layered vector primitives** (lines, circles, dots, etc.)
 - Composable layer system for complex crosshair designs
-- Transparent, always-on-top overlay window — no game file modification required
+- Transparent, always-on-top overlay window (no game file modification required)
 - Per-monitor high-DPI aware (`PerMonitorV2`)
-- Single-file publish — no installer needed
+- Single-file publish, no installer needed
 
 ## Requirements
 
@@ -21,7 +21,7 @@ A lightweight Windows desktop overlay that renders a customizable crosshair on t
 1. Download the latest release (single `.exe`, no installer)
 2. Run `CrosshairOverlay.exe`
 3. Position and configure your crosshair via the UI
-4. Launch your game — the overlay will stay on top
+4. Launch your game. The overlay will stay on top.
 
 > For best results, run your game in **Borderless Windowed** mode. See the anti-cheat section below for important notes on exclusive fullscreen.
 
@@ -50,7 +50,7 @@ Or open `crosshair-overlay-for-sp.sln` in Visual Studio 2022+.
 
 ## ⚠️ Anti-Cheat Warning
 
-This tool is an **external overlay** — it draws on top of the screen using a transparent window and does not read or write to game memory. That said, there are important considerations before using it in any game with anti-cheat software.
+This tool is an **external overlay**: it draws on top of the screen using a transparent window and does not read or write to game memory. That said, there are important considerations before using it in any game with anti-cheat software.
 
 ### How it works
 
